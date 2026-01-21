@@ -6,7 +6,7 @@ import {
     ArMarkerControls
 } from 'threex';
 
-ArToolkitContext.baseURL = '../';
+ArToolkitContext.baseURL = './';
 
 class View {
     constructor() {
@@ -135,7 +135,7 @@ class View {
     initARContext() {
         // create atToolkitContext
         this.arToolkitContext = new ArToolkitContext({
-            cameraParametersUrl: ArToolkitContext.baseURL + '../data/camera_para.dat',
+            cameraParametersUrl: ArToolkitContext.baseURL + "data/camera_para.dat",
             detectionMode: 'mono'
         });
         // initialize it
@@ -161,7 +161,7 @@ class View {
             this.arToolkitContext,
             this.camera, {
                 type: 'pattern',
-                patternUrl: ArToolkitContext.baseURL + '../data/patt.hiro',
+                patternUrl: ArToolkitContext.baseURL + "data/patt.hiro",
                 changeMatrixMode: 'cameraTransformMatrix'
             }
         );
