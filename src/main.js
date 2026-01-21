@@ -20,6 +20,8 @@ class View {
         this.renderer.domElement.style.position = 'absolute';
         this.renderer.domElement.style.top = '0px';
         this.renderer.domElement.style.left = '0px';
+        this.renderer.domElement.style.width = '100%';
+        this.renderer.domElement.style.height = '100%';
         this.renderer.shadowMap.enabled = true;
         document.body.appendChild(this.renderer.domElement);
 
