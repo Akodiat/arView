@@ -1,202 +1,216 @@
 import * as THREE from 'three';
-import {ArToolkitSource, ArToolkitContext, ArMarkerControls}  from 'threex'
+import {GLTFLoader} from 'three/addons/loaders/GLTFLoader.js';
+import {
+    ArToolkitSource,
+    ArToolkitContext,
+    ArMarkerControls
+} from 'threex';
 
-// Your AR.js code here
+ArToolkitContext.baseURL = '../';
 
-ArToolkitContext.baseURL = '../'
+class View {
+    constructor() {
+        // init renderer
+        this.renderer = new THREE.WebGLRenderer({
+            antialias: true,
+            alpha: true
+        });
+        this.renderer.setClearColor(new THREE.Color('lightgrey'), 0);
+        this.renderer.setSize(640, 480);
+        this.renderer.domElement.style.position = 'absolute';
+        this.renderer.domElement.style.top = '0px';
+        this.renderer.domElement.style.left = '0px';
+        this.renderer.shadowMap.enabled = true;
+        document.body.appendChild(this.renderer.domElement);
 
-//////////////////////////////////////////////////////////////////////////////////
-//		Init
-//////////////////////////////////////////////////////////////////////////////////
+        this.clock = new THREE.Clock();
+        this.animationMixers = [];
 
-// init renderer
-var renderer = new THREE.WebGLRenderer({
-    antialias: true,
-    alpha: true
-});
-renderer.setClearColor(new THREE.Color('lightgrey'), 0)
-renderer.setSize(640, 480);
-renderer.domElement.style.position = 'absolute'
-renderer.domElement.style.top = '0px'
-renderer.domElement.style.left = '0px'
-document.body.appendChild(renderer.domElement);
+        // array of functions for the rendering loop
+        this.onRenderFcts = [];
 
-// array of functions for the rendering loop
-var onRenderFcts = [];
-var arToolkitContext, arMarkerControls;
+        // init scene and camera
+        this.scene = new THREE.Scene();
+        this.camera = new THREE.Camera();
+        this.scene.add(this.camera);
 
-// init scene and camera
-var scene = new THREE.Scene();
+        this.arToolkitSource = new ArToolkitSource({
+            sourceType: 'webcam',
+            sourceWidth: window.innerWidth > window.innerHeight ? 640 : 480,
+            sourceHeight: window.innerWidth > window.innerHeight ? 480 : 640,
+        });
 
-//////////////////////////////////////////////////////////////////////////////////
-//		Initialize a basic camera
-//////////////////////////////////////////////////////////////////////////////////
+        this.arToolkitSource.init(() => {
+            this.arToolkitSource.domElement.addEventListener('canplay', () => {
+                console.log(
+                    'canplay',
+                    'actual source dimensions',
+                    this.arToolkitSource.domElement.videoWidth,
+                    this.arToolkitSource.domElement.videoHeight
+                );
+                this.initARContext();
+            });
+        })
 
-// Create a camera
-var camera = new THREE.Camera();
-scene.add(camera);
+        // handle resize
+        window.addEventListener('resize', () => {
+            this.arToolkitSource.onResizeElement();
+            this.arToolkitSource.copyElementSizeTo(this.renderer.domElement);
+            if (this.arToolkitContext &&this.arToolkitContext.arController) {
+                this.arToolkitSource.copyElementSizeTo(
+                    this.arToolkitContext.arController.canvas
+                );
+            }
+        });
 
-////////////////////////////////////////////////////////////////////////////////
-//          handle arToolkitSource
-////////////////////////////////////////////////////////////////////////////////
+        this.setupLights();
 
-var arToolkitSource = new ArToolkitSource({
-    // to read from the webcam
-    sourceType: 'webcam',
+        var geometry = new THREE.BoxGeometry(1, 0.1, 1);
+        var material = new THREE.MeshStandardMaterial({
+            transparent: true,
+            opacity: 0.5,
+            side: THREE.DoubleSide
+        });
+        var mesh = new THREE.Mesh(geometry, material);
+        mesh.position.y = geometry.parameters.height / 2;
+        mesh.receiveShadow = true;
+        this.scene.add(mesh);
 
-    sourceWidth: window.innerWidth > window.innerHeight ? 640 : 480,
-    sourceHeight: window.innerWidth > window.innerHeight ? 480 : 640,
+        const loader = new GLTFLoader();
+        loader.loadAsync("resources/flamingo.glb").then(
+            gltf => {
+                const model = gltf.scene;
+                model.scale.multiplyScalar(0.01);
+                model.position.y += 1;
+                model.traverse(child=>{
+                    child.castShadow = true;
+                    child.receiveShadow = true;
+                })
+                this.scene.add(model);
 
-    // // to read from an image
-    // sourceType : 'image',
-    // sourceUrl : THREEx.ArToolkitContext.baseURL + '../data/images/img.jpg',
-
-    // to read from a video
-    // sourceType : 'video',
-    // sourceUrl : THREEx.ArToolkitContext.baseURL + '../data/videos/headtracking.mp4',
-})
-
-arToolkitSource.init(function onReady() {
-    arToolkitSource.domElement.addEventListener('canplay', () => {
-        console.log(
-            'canplay',
-            'actual source dimensions',
-            arToolkitSource.domElement.videoWidth,
-            arToolkitSource.domElement.videoHeight
+                if (gltf.animations.length > 0) {
+                    const mixer = new THREE.AnimationMixer(gltf.scene);
+                    for (const a of gltf.animations) {
+                        mixer.clipAction(a).play();
+                    }
+                    this.animationMixers.push(mixer);
+                }
+            }
         );
 
-        initARContext();
-    });
-    window.arToolkitSource = arToolkitSource;
-    setTimeout(() => {
-        onResize()
-    }, 2000);
-})
+        this.renderer.setAnimationLoop(() => this.animate());
+    }
 
-// handle resize
-window.addEventListener('resize', function () {
-    onResize()
-})
+    setupLights() {
+        const hemiLight = new THREE.HemisphereLight(0xffffff, 0xffffff, 2);
+        hemiLight.color.setHSL(0.6, 1, 0.6);
+        hemiLight.groundColor.setHSL(0.095, 1, 0.75);
+        hemiLight.position.set(0, 50, 0);
+        this.scene.add(hemiLight);
 
-function onResize() {
-    arToolkitSource.onResizeElement()
-    arToolkitSource.copyElementSizeTo(renderer.domElement)
-    if (arToolkitContext.arController !== null) {
-        arToolkitSource.copyElementSizeTo(arToolkitContext.arController.canvas)
+        const dirLight = new THREE.DirectionalLight(0xffffff, 3);
+        dirLight.color.setHSL(0.1, 1, 0.95);
+        dirLight.position.set(-1, 1.75, 1);
+        dirLight.position.multiplyScalar(0.3);
+        dirLight.castShadow = true;
+        dirLight.shadow.mapSize.width = 2048;
+        dirLight.shadow.mapSize.height = 2048;
+        const d = 2;
+
+        dirLight.shadow.camera.left = -d;
+        dirLight.shadow.camera.right = d;
+        dirLight.shadow.camera.top = d;
+        dirLight.shadow.camera.bottom = -d;
+
+        dirLight.shadow.camera.far = 35;
+        dirLight.shadow.bias = - 0.0001;
+
+        this.scene.add(dirLight);
+
+        //const dirLightHelper = new THREE.DirectionalLightHelper( dirLight, 1 );
+        //this.scene.add(dirLightHelper);
+    }
+
+
+    initARContext() {
+        // create atToolkitContext
+        this.arToolkitContext = new ArToolkitContext({
+            cameraParametersUrl: ArToolkitContext.baseURL + '../data/camera_para.dat',
+            detectionMode: 'mono'
+        });
+        // initialize it
+        this.arToolkitContext.init(() => { // copy projection matrix to camera
+            this.camera.projectionMatrix.copy(
+                this.arToolkitContext.getProjectionMatrix()
+            );
+
+            this.arToolkitContext.arController.orientation = this.getSourceOrientation();
+            this.arToolkitContext.arController.options.orientation = this.getSourceOrientation();
+
+            console.log('arToolkitContext', this.arToolkitContext);
+
+            this.arToolkitSource.onResizeElement();
+            this.arToolkitSource.copyElementSizeTo(this.renderer.domElement);
+            this.arToolkitSource.copyElementSizeTo(this.arToolkitContext.arController.canvas);
+
+            document.getElementById("loadingDialog").open = false;
+        })
+
+        // MARKER
+        this.arMarkerControls = new ArMarkerControls(
+            this.arToolkitContext,
+            this.camera, {
+                type: 'pattern',
+                patternUrl: ArToolkitContext.baseURL + '../data/patt.hiro',
+                changeMatrixMode: 'cameraTransformMatrix'
+            }
+        );
+
+        this.scene.visible = false;
+
+        console.log('ArMarkerControls', this.arMarkerControls);
+    }
+
+    getSourceOrientation() {
+        if (!this.arToolkitSource) {
+            return null;
+        }
+
+        console.log(
+            'actual source dimensions',
+            this.arToolkitSource.domElement.videoWidth,
+            this.arToolkitSource.domElement.videoHeight
+        );
+
+        if (this.arToolkitSource.domElement.videoWidth > this.arToolkitSource.domElement.videoHeight) {
+            console.log('source orientation', 'landscape');
+            return 'landscape';
+        } else {
+            console.log('source orientation', 'portrait');
+            return 'portrait';
+        }
+    }
+
+    animate() {
+        if (!this.arToolkitContext ||
+            !this.arToolkitSource ||
+            !this.arToolkitSource.ready
+        ) {
+            return;
+        }
+
+        this.arToolkitContext.update(this.arToolkitSource.domElement);
+
+        // update scene.visible if the marker is seen
+        this.scene.visible = this.camera.visible;
+
+        const delta = this.clock.getDelta();
+        for (const mixer of this.animationMixers) {
+            mixer.update(delta);
+        }
+
+        this.renderer.render(this.scene, this.camera);
     }
 }
-////////////////////////////////////////////////////////////////////////////////
-//          initialize arToolkitContext
-////////////////////////////////////////////////////////////////////////////////
 
-
-function initARContext() { // create atToolkitContext
-    arToolkitContext = new ArToolkitContext({
-        cameraParametersUrl: ArToolkitContext.baseURL + '../data/camera_para.dat',
-        detectionMode: 'mono'
-    })
-    // initialize it
-    arToolkitContext.init(() => { // copy projection matrix to camera
-        camera.projectionMatrix.copy(arToolkitContext.getProjectionMatrix());
-
-        arToolkitContext.arController.orientation = getSourceOrientation();
-        arToolkitContext.arController.options.orientation = getSourceOrientation();
-
-        console.log('arToolkitContext', arToolkitContext);
-        window.arToolkitContext = arToolkitContext;
-    })
-
-    // MARKER
-    arMarkerControls = new ArMarkerControls(arToolkitContext, camera, {
-        type: 'pattern',
-        patternUrl: ArToolkitContext.baseURL + '../data/patt.hiro',
-        changeMatrixMode: 'cameraTransformMatrix'
-    });
-
-    scene.visible = false
-
-    console.log('ArMarkerControls', arMarkerControls);
-    window.arMarkerControls = arMarkerControls;
-}
-
-
-function getSourceOrientation() {
-    if (!arToolkitSource) {
-        return null;
-    }
-
-    console.log(
-        'actual source dimensions',
-        arToolkitSource.domElement.videoWidth,
-        arToolkitSource.domElement.videoHeight
-    );
-
-    if (arToolkitSource.domElement.videoWidth > arToolkitSource.domElement.videoHeight) {
-        console.log('source orientation', 'landscape');
-        return 'landscape';
-    } else {
-        console.log('source orientation', 'portrait');
-        return 'portrait';
-    }
-}
-
-// update artoolkit on every frame
-onRenderFcts.push(function () {
-    if (!arToolkitContext || !arToolkitSource || !arToolkitSource.ready) {
-        return;
-    }
-
-    arToolkitContext.update(arToolkitSource.domElement)
-
-    // update scene.visible if the marker is seen
-    scene.visible = camera.visible
-})
-
-//////////////////////////////////////////////////////////////////////////////////
-//		add an object in the scene
-//////////////////////////////////////////////////////////////////////////////////
-
-// add a torus knot
-var geometry = new THREE.BoxGeometry(1, 1, 1);
-var material = new THREE.MeshNormalMaterial({
-    transparent: true,
-    opacity: 0.5,
-    side: THREE.DoubleSide
-});
-var mesh = new THREE.Mesh(geometry, material);
-mesh.position.y = geometry.parameters.height / 2
-scene.add(mesh);
-
-var geometry = new THREE.TorusKnotGeometry(0.3, 0.1, 64, 16);
-var material = new THREE.MeshNormalMaterial();
-var mesh = new THREE.Mesh(geometry, material);
-mesh.position.y = 0.5
-scene.add(mesh);
-
-onRenderFcts.push(function (delta) {
-    mesh.rotation.x += Math.PI * delta
-})
-
-//////////////////////////////////////////////////////////////////////////////////
-//		render the whole thing on the page
-//////////////////////////////////////////////////////////////////////////////////
-
-// render the scene
-onRenderFcts.push(function () {
-    renderer.render(scene, camera);
-})
-
-// run the rendering loop
-var lastTimeMsec = null
-requestAnimationFrame(function animate(nowMsec) {
-    // keep looping
-    requestAnimationFrame(animate);
-    // measure time
-    lastTimeMsec = lastTimeMsec || nowMsec - 1000 / 60
-    var deltaMsec = Math.min(200, nowMsec - lastTimeMsec)
-    lastTimeMsec = nowMsec
-    // call each update function
-    onRenderFcts.forEach(function (onRenderFct) {
-        onRenderFct(deltaMsec / 1000, nowMsec / 1000)
-    })
-})
+new View();
