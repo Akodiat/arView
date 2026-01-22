@@ -4,16 +4,36 @@ import {MindARThree} from 'mindar-image-three';
 
 const mindarThree = new MindARThree({
     container: document.querySelector("#container"),
-    imageTargetSrc: "./data/marker.mind"
+    imageTargetSrc: "./data/targets.mind"
 });
 
+function addAnchorModel(anchorIdx, path, loader = new GLTFLoader()) {
+    const anchor = mindarThree.addAnchor(anchorIdx);
+    const geometry = new THREE.PlaneGeometry(1, 1);
+    const material = new THREE.MeshStandardMaterial( {color: 0x00ffff, transparent: true, opacity: 0.5} );
+    const plane = new THREE.Mesh(geometry, material);
+    anchor.group.add(plane);
+
+    loader.loadAsync(path).then(
+    gltf => {
+        const model = gltf.scene;
+        model.scale.multiplyScalar(0.01);
+        model.position.z += 1;
+        model.rotation.x = Math.PI/2;
+        anchor.group.add(model);
+
+        if (gltf.animations.length > 0) {
+            const mixer = new THREE.AnimationMixer(gltf.scene);
+            for (const a of gltf.animations) {
+                mixer.clipAction(a).play();
+            }
+            animationMixers.push(mixer);
+        }
+    }
+);
+}
+
 const {renderer, scene, camera} = mindarThree;
-renderer.shadowMap.enabled = true;
-const anchor = mindarThree.addAnchor(0);
-const geometry = new THREE.PlaneGeometry(1, 1);
-const material = new THREE.MeshStandardMaterial( {color: 0x00ffff, transparent: true, opacity: 0.5} );
-const plane = new THREE.Mesh(geometry, material);
-anchor.group.add(plane);
 
 const clock = new THREE.Clock();
 const animationMixers = [];
@@ -32,23 +52,8 @@ dirLight.position.multiplyScalar(0.3);
 scene.add(dirLight);
 
 const loader = new GLTFLoader();
-loader.loadAsync("resources/flamingo.glb").then(
-    gltf => {
-        const model = gltf.scene;
-        model.scale.multiplyScalar(0.01);
-        model.position.z += 1;
-        model.rotation.x = Math.PI/2;
-        anchor.group.add(model);
-
-        if (gltf.animations.length > 0) {
-            const mixer = new THREE.AnimationMixer(gltf.scene);
-            for (const a of gltf.animations) {
-                mixer.clipAction(a).play();
-            }
-            animationMixers.push(mixer);
-        }
-    }
-);
+addAnchorModel(0, "resources/horse.glb", loader);
+addAnchorModel(1, "resources/flamingo.glb", loader);
 
 const start = async() => {
     await mindarThree.start();
