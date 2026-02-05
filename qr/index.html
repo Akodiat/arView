@@ -9,34 +9,38 @@
 <div id="canvas"></div>
 <script type="text/javascript">
 
-    const qrCode = new QRCodeStyling({
-        width: 300,
-        height: 300,
-        type: "svg",
-        image: "./hiro.png",
-        data:"https://akodiat.github.io/arView/?i=1",
-        shape: "square",
-        margin:10,
-        qrOptions:{
-            typeNumber:"0",
-            mode:"Byte",
-            errorCorrectionLevel:"H"
-        },
-        imageOptions:{
-                saveAsBlob:true,
-                hideBackgroundDots:false,
-                imageSize:1,
-                margin:6
-        },
-        dotsOptions:{
-            type:"square",
-            color:"#888888",
-            roundSize:true
-        },
-    });
+    function generateCode(i) {
+        return new QRCodeStyling({
+            width: 300,
+            height: 300,
+            type: "svg",
+            image: "../data/target.png",
+            data:`https://akodiat.github.io/arView/?i=${i}`,
+            shape: "square",
+            margin:10,
+            qrOptions:{
+                typeNumber:"0",
+                mode:"Byte",
+                errorCorrectionLevel:"H"
+            },
+            imageOptions:{
+                    saveAsBlob:true,
+                    hideBackgroundDots:false,
+                    imageSize:1,
+                    margin:6
+            },
+            dotsOptions:{
+                type:"square",
+                color:"#000000",
+                roundSize:true
+            },
+        });
+    }
 
+    const qrCode = generateCode(1);
     qrCode.append(document.getElementById("canvas"));
-    qrCode.download({ name: "qr", extension: "svg" });
+    //qrCode.download({ name: "qr", extension: "svg" });
+
 </script>
 </body>
 </html>

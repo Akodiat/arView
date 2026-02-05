@@ -1,42 +1,61 @@
 import * as THREE from 'three';
 import {GLTFLoader} from 'three/addons/loaders/GLTFLoader.js';
 import {MindARThree} from 'mindar-image-three';
+import QrScanner from '../lib/qr-scanner.min.js';
+
+const modelList = [
+    "resources/flamingo.glb",
+    "resources/horse.glb"
+];
 
 const mindarThree = new MindARThree({
     container: document.querySelector("#container"),
-    imageTargetSrc: "./data/targets.mind"
+    imageTargetSrc: "./data/target.mind",
+    filterMinCF: 0.01,
+    filterBeta: 1
 });
 
-function addAnchorModel(anchorIdx, path, loader = new GLTFLoader()) {
-    const anchor = mindarThree.addAnchor(anchorIdx);
-    const geometry = new THREE.PlaneGeometry(1, 1);
-    const material = new THREE.MeshStandardMaterial( {color: 0x00ffff, transparent: true, opacity: 0.5} );
-    const plane = new THREE.Mesh(geometry, material);
-    anchor.group.add(plane);
+const anchor = mindarThree.addAnchor(0);
+const geometry = new THREE.PlaneGeometry(1, 1);
+const material = new THREE.MeshStandardMaterial({
+    color: 0x00ffff, transparent: true, opacity: 0.5
+});
+const plane = new THREE.Mesh(geometry, material);
+anchor.group.add(plane);
 
-    loader.loadAsync(path).then(
-    gltf => {
-        const model = gltf.scene;
-        model.scale.multiplyScalar(0.01);
-        model.position.z += 1;
-        model.rotation.x = Math.PI/2;
-        anchor.group.add(model);
+let currentModelId, currentModel;
+let animationMixer;
 
-        if (gltf.animations.length > 0) {
-            const mixer = new THREE.AnimationMixer(gltf.scene);
-            for (const a of gltf.animations) {
-                mixer.clipAction(a).play();
-            }
-            animationMixers.push(mixer);
-        }
+const loader = new GLTFLoader();
+function setModel(modelId) {
+    if (modelId === currentModelId) {
+        return
     }
-);
+    currentModelId = modelId;
+    if (currentModel) {
+        anchor.group.remove(currentModel);
+    }
+    loader.loadAsync(modelList[modelId]).then(
+        gltf => {
+            currentModel = gltf.scene;
+            currentModel.scale.multiplyScalar(0.02);
+            currentModel.position.z += 2;
+            currentModel.rotation.x = Math.PI/2;
+            anchor.group.add(currentModel);
+
+            if (gltf.animations.length > 0) {
+                animationMixer = new THREE.AnimationMixer(gltf.scene);
+                for (const a of gltf.animations) {
+                    animationMixer.clipAction(a).play();
+                }
+            }
+        }
+    );
 }
 
 const {renderer, scene, camera} = mindarThree;
 
 const clock = new THREE.Clock();
-const animationMixers = [];
 
 const hemiLight = new THREE.HemisphereLight(0xffffff, 0xffffff, 2);
 hemiLight.color.setHSL(0.6, 1, 0.6);
@@ -51,16 +70,26 @@ dirLight.position.multiplyScalar(0.3);
 
 scene.add(dirLight);
 
-const loader = new GLTFLoader();
-addAnchorModel(0, "resources/horse.glb", loader);
-addAnchorModel(1, "resources/flamingo.glb", loader);
-
 const start = async() => {
     await mindarThree.start();
+
+    // Swap models based on qr code param value
+    const qrScanner = new QrScanner(
+        document.getElementById("qrvid"),
+        result => {
+            const url = new URL(result.data)
+            const i = parseInt(url.searchParams.get("i"));
+            console.log(i);
+            setModel(i);
+        },
+        {returnDetailedScanResult: true},
+    );
+    qrScanner.start();
+
     renderer.setAnimationLoop(() => {
         const delta = clock.getDelta();
-        for (const mixer of animationMixers) {
-            mixer.update(delta);
+        if (animationMixer) {
+            animationMixer.update(delta);
         }
         renderer.render(scene, camera);
     });
