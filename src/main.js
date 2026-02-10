@@ -38,8 +38,8 @@ function setModel(modelId) {
     loader.loadAsync(modelList[modelId]).then(
         gltf => {
             currentModel = gltf.scene;
-            currentModel.scale.multiplyScalar(0.02);
-            currentModel.position.z += 2;
+            currentModel.scale.multiplyScalar(0.01);
+            currentModel.position.z += 1;
             currentModel.rotation.x = Math.PI/2;
             anchor.group.add(currentModel);
 
