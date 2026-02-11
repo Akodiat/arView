@@ -92,8 +92,9 @@ function initialize() {
     // build markerControls
     scene.add(markerRoot);
 
-    markerRoot.add(addModel(0));
-    markerRoot.add(addModel(1));
+    for (let i=0; i<modelList.length; i++) {
+        markerRoot.add(addModel(i));
+    }
 
     const hemiLight = new THREE.HemisphereLight(0xffffff, 0xffffff, 2);
     hemiLight.color.setHSL(0.6, 1, 0.6);
@@ -137,7 +138,7 @@ function addModel(modelId) {
     loader.loadAsync(modelList[modelId]).then(
         gltf => {
             const mesh = gltf.scene;
-            mesh.scale.multiplyScalar(0.02);
+            mesh.scale.multiplyScalar(0.01);
             group.add(mesh);
 
             if (gltf.animations.length > 0) {
