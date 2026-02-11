@@ -17,8 +17,6 @@ var scene, camera, renderer;
 
 var arToolkitSource, arToolkitContext;
 
-var mesh;
-
 let currentModelId, currentModel;
 let animationMixer;
 
@@ -27,6 +25,7 @@ const loader = new GLTFLoader();
 const clock = new THREE.Clock();
 
 const markerRoot = new THREE.Group();
+
 
 initialize();
 
@@ -71,14 +70,12 @@ function initialize() {
         }
     }
 
-    arToolkitSource.init(function onReady() {
-        onResize()
+    arToolkitSource.init(() => {
+        onResize();
     });
 
     // handle resize event
-    window.addEventListener('resize', function() {
-        onResize()
-    });
+    window.addEventListener('resize', onResize);
 
     ////////////////////////////////////////////////////////////
     // setup arToolkitContext
@@ -91,9 +88,9 @@ function initialize() {
     });
 
     // copy projection matrix to camera when initialization complete
-    arToolkitContext.init(function onCompleted() {
+    arToolkitContext.init(() => {
         camera.projectionMatrix.copy(arToolkitContext.getProjectionMatrix());
-		onResize()
+		onResize();
     });
 
     ////////////////////////////////////////////////////////////
@@ -102,21 +99,22 @@ function initialize() {
 
     // build markerControls
     scene.add(markerRoot);
+
     const markerControls = new ArMarkerControls(arToolkitContext, markerRoot, {
         type: 'pattern',
         patternUrl: "./hiro.patt",
-    })
+    });
 
-    const geometry = new THREE.BoxGeometry(1, 0.1, 1);
-    const material = new THREE.MeshNormalMaterial({
+    const markerGeometry = new THREE.BoxGeometry(1, 0.1, 1);
+    const markerMaterial = new THREE.MeshNormalMaterial({
         transparent: true,
         opacity: 0.5,
         side: THREE.DoubleSide
     });
 
-    mesh = new THREE.Mesh(geometry, material);
-    mesh.position.y = 0.05;
-	markerRoot.add(mesh);
+    const markerMesh = new THREE.Mesh(markerGeometry, markerMaterial);
+    markerMesh.position.y = 0.05;
+	markerRoot.add(markerMesh);
 
 	const hemiLight = new THREE.HemisphereLight(0xffffff, 0xffffff, 2);
 	hemiLight.color.setHSL(0.6, 1, 0.6);
@@ -141,6 +139,7 @@ function setModel(modelId) {
 	if (modelId === currentModelId) {
 		return
 	}
+	console.log(`Showing model #${modelId}`);
 	currentModelId = modelId;
 	if (currentModel) {
 		markerRoot.remove(currentModel);
@@ -149,8 +148,6 @@ function setModel(modelId) {
 		gltf => {
 			currentModel = gltf.scene;
 			currentModel.scale.multiplyScalar(0.02);
-			//currentModel.position.y += 2;
-			//currentModel.rotation.x = Math.PI/2;
 			markerRoot.add(currentModel);
 
 			if (gltf.animations.length > 0) {
@@ -176,7 +173,7 @@ function animate() {
 	}
 	// update artoolkit on every frame
     if (arToolkitSource.ready !== false) {
-        arToolkitContext.update(arToolkitSource.domElement);
+		arToolkitContext.update(arToolkitSource.domElement);
 	}
     render();
 }
