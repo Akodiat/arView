@@ -63,10 +63,9 @@ function initialize() {
     // handle resize event
     window.addEventListener("resize", onResize);
 
-    window.addEventListener("markerFound", ()=>{
-        // Ugly hack to make sure we have correct canvas size
-        onResize();
-    });
+    // Ugly hacks to make sure we have correct canvas size
+    window.addEventListener("markerFound", onResize);
+    window.addEventListener("click", onResize);
 
     ////////////////////////////////////////////////////////////
     // setup arToolkitContext
