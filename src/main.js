@@ -1,6 +1,6 @@
 import * as THREE from 'three';
 import {GLTFLoader} from 'three/addons/loaders/GLTFLoader.js';
-import {MindARThree} from 'mindar-image-three';
+import {MindARThree} from '../lib/mind-ar/mindar-image-three.prod.js';
 import QrScanner from '../lib/qr-scanner.min.js';
 
 const modelList = [
@@ -8,11 +8,25 @@ const modelList = [
     "resources/horse.glb"
 ];
 
+
+// Create Three.js scene, camera, and renderer
+const scene = new THREE.Scene();
+const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+const renderer = new THREE.WebGLRenderer({
+    antialias: true,
+    alpha: true
+});
+renderer.setSize(window.innerWidth, window.innerHeight);
+document.body.appendChild(renderer.domElement);
+
+// Create MindAR instance (requires canvas, scene, and camera)
 const mindarThree = new MindARThree({
-    container: document.querySelector("#container"),
+    container: document.body,
+    canvas: renderer.domElement,
+    scene: scene,
+    camera: camera,
     imageTargetSrc: "./data/target.mind",
-    filterMinCF: 0.01,
-    filterBeta: 1
+    //resolution: '720p'  // Optional: Set camera resolution
 });
 
 const anchor = mindarThree.addAnchor(0);
@@ -53,7 +67,6 @@ function setModel(modelId) {
     );
 }
 
-const {renderer, scene, camera} = mindarThree;
 
 const clock = new THREE.Clock();
 
