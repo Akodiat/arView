@@ -1,11 +1,11 @@
-import * as THREE from 'three'
-import {GLTFLoader} from 'three/addons/loaders/GLTFLoader.js';
+import * as THREE from "three"
+import {GLTFLoader} from "three/addons/loaders/GLTFLoader.js";
 
 import {
     ArToolkitSource,
     ArToolkitContext,
     ArMarkerControls
-} from 'threex';
+} from "threex";
 
 
 const modelList = [
@@ -40,11 +40,11 @@ function initialize() {
         antialias: true,
         alpha: true
     });
-    renderer.setClearColor(new THREE.Color('lightgrey'), 0)
+    renderer.setClearColor(new THREE.Color("lightgrey"), 0)
     renderer.setSize(640, 480);
-    renderer.domElement.style.position = 'absolute';
-    renderer.domElement.style.top = '0px';
-    renderer.domElement.style.left = '0px';
+    renderer.domElement.style.position = "absolute";
+    renderer.domElement.style.top = "0px";
+    renderer.domElement.style.left = "0px";
     document.body.appendChild(renderer.domElement);
 
 
@@ -53,27 +53,20 @@ function initialize() {
     ////////////////////////////////////////////////////////////
 
     arToolkitSource = new ArToolkitSource({
-        sourceType: 'webcam',
+        sourceType: "webcam",
         sourceWidth: window.innerWidth,
         sourceHeight: window.innerHeight,
         displayWidth: window.innerWidth,
         displayHeight: window.innerHeight,
     });
 
-    function onResize() {
-        arToolkitSource.onResizeElement()
-        arToolkitSource.copyElementSizeTo(renderer.domElement);
-        if (arToolkitContext.arController !== null) {
-            arToolkitSource.copyElementSizeTo(arToolkitContext.arController.canvas);
-        }
-    }
+    // handle resize event
+    window.addEventListener("resize", onResize);
 
-    arToolkitSource.init(() => {
+    window.addEventListener("markerFound", ()=>{
+        // Ugly hack to make sure we have correct canvas size
         onResize();
     });
-
-    // handle resize event
-    window.addEventListener('resize', onResize);
 
     ////////////////////////////////////////////////////////////
     // setup arToolkitContext
@@ -81,16 +74,17 @@ function initialize() {
 
     // create atToolkitContext
     arToolkitContext = new ArToolkitContext({
-        cameraParametersUrl: './camera_para.dat',
-        detectionMode: 'mono_and_matrix',
-		matrixCodeType: '4x4_BCH_13_9_3',
+        cameraParametersUrl: "./camera_para.dat",
+        detectionMode: "mono_and_matrix",
+        matrixCodeType: "4x4_BCH_13_9_3",
     });
 
     // copy projection matrix to camera when initialization complete
     arToolkitContext.init(() => {
         camera.projectionMatrix.copy(arToolkitContext.getProjectionMatrix());
-		onResize();
     });
+
+    arToolkitSource.init(() => {});
 
     ////////////////////////////////////////////////////////////
     // setup markerRoots
@@ -99,28 +93,36 @@ function initialize() {
     // build markerControls
     scene.add(markerRoot);
 
-	markerRoot.add(addModel(0));
-	markerRoot.add(addModel(1));
+    markerRoot.add(addModel(0));
+    markerRoot.add(addModel(1));
 
-	const hemiLight = new THREE.HemisphereLight(0xffffff, 0xffffff, 2);
-	hemiLight.color.setHSL(0.6, 1, 0.6);
-	hemiLight.groundColor.setHSL(0.095, 1, 0.75);
-	hemiLight.position.set(0, 50, 0);
-	scene.add(hemiLight);
+    const hemiLight = new THREE.HemisphereLight(0xffffff, 0xffffff, 2);
+    hemiLight.color.setHSL(0.6, 1, 0.6);
+    hemiLight.groundColor.setHSL(0.095, 1, 0.75);
+    hemiLight.position.set(0, 50, 0);
+    scene.add(hemiLight);
 
-	const dirLight = new THREE.DirectionalLight(0xffffff, 3);
-	dirLight.color.setHSL(0.1, 1, 0.95);
-	dirLight.position.set(-1, 1.75, 1);
-	dirLight.position.multiplyScalar(0.3);
+    const dirLight = new THREE.DirectionalLight(0xffffff, 3);
+    dirLight.color.setHSL(0.1, 1, 0.95);
+    dirLight.position.set(-1, 1.75, 1);
+    dirLight.position.multiplyScalar(0.3);
 
-	scene.add(dirLight);
+    scene.add(dirLight);
 
-	renderer.setAnimationLoop(animate);
+    renderer.setAnimationLoop(animate);
 
 }
 
+function onResize() {
+    arToolkitSource.onResizeElement();
+    arToolkitSource.copyElementSizeTo(renderer.domElement);
+    if (arToolkitContext.arController !== null) {
+        arToolkitSource.copyElementSizeTo(arToolkitContext.arController.canvas);
+    }
+}
+
 function addModel(modelId) {
-	const group = new THREE.Group();
+    const group = new THREE.Group();
 
     const markerGeometry = new THREE.BoxGeometry(1, 0.1, 1);
     const markerMaterial = new THREE.MeshNormalMaterial({
@@ -131,29 +133,29 @@ function addModel(modelId) {
 
     const markerMesh = new THREE.Mesh(markerGeometry, markerMaterial);
     markerMesh.position.y = 0.05;
-	group.add(markerMesh);
+    group.add(markerMesh);
 
-	loader.loadAsync(modelList[modelId]).then(
-		gltf => {
-			const mesh = gltf.scene;
-			mesh.scale.multiplyScalar(0.02);
-			group.add(mesh);
+    loader.loadAsync(modelList[modelId]).then(
+        gltf => {
+            const mesh = gltf.scene;
+            mesh.scale.multiplyScalar(0.02);
+            group.add(mesh);
 
-			if (gltf.animations.length > 0) {
-				const animationMixer = new THREE.AnimationMixer(gltf.scene);
-				for (const a of gltf.animations) {
-					animationMixer.clipAction(a).play();
-				}
-				animationMixers.push(animationMixer);
-			}
-		}
-	);
-	new ArMarkerControls(arToolkitContext, group, {
-        type: 'barcode',
+            if (gltf.animations.length > 0) {
+                const animationMixer = new THREE.AnimationMixer(gltf.scene);
+                for (const a of gltf.animations) {
+                    animationMixer.clipAction(a).play();
+                }
+                animationMixers.push(animationMixer);
+            }
+        }
+    );
+    new ArMarkerControls(arToolkitContext, group, {
+        type: "barcode",
         barcodeValue: modelId,
     });
 
-	return group;
+    return group;
 }
 
 
@@ -162,14 +164,21 @@ function render() {
 }
 
 
+let initialResize = false;
 function animate() {
-	const delta = clock.getDelta();
-	for (const a of animationMixers) {
-		a.update(delta);
-	}
-	// update artoolkit on every frame
+    const delta = clock.getDelta();
+    for (const a of animationMixers) {
+        a.update(delta);
+    }
+    if (!initialResize) {
+        // Ugly, but only way I found to trigger resize after
+        // everything is set up.
+        onResize();
+        initialResize = true;
+    }
+    // update artoolkit on every frame
     if (arToolkitSource.ready !== false) {
-		arToolkitContext.update(arToolkitSource.domElement);
-	}
+        arToolkitContext.update(arToolkitSource.domElement);
+    }
     render();
 }
