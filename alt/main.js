@@ -17,15 +17,13 @@ var scene, camera, renderer;
 
 var arToolkitSource, arToolkitContext;
 
-let currentModelId, currentModel;
-let animationMixer;
+const animationMixers = [];
 
 
 const loader = new GLTFLoader();
 const clock = new THREE.Clock();
 
 const markerRoot = new THREE.Group();
-
 
 initialize();
 
@@ -84,7 +82,8 @@ function initialize() {
     // create atToolkitContext
     arToolkitContext = new ArToolkitContext({
         cameraParametersUrl: './camera_para.dat',
-        detectionMode: 'mono'
+        detectionMode: 'mono_and_matrix',
+		matrixCodeType: '4x4_BCH_13_9_3',
     });
 
     // copy projection matrix to camera when initialization complete
@@ -100,21 +99,8 @@ function initialize() {
     // build markerControls
     scene.add(markerRoot);
 
-    const markerControls = new ArMarkerControls(arToolkitContext, markerRoot, {
-        type: 'pattern',
-        patternUrl: "./hiro.patt",
-    });
-
-    const markerGeometry = new THREE.BoxGeometry(1, 0.1, 1);
-    const markerMaterial = new THREE.MeshNormalMaterial({
-        transparent: true,
-        opacity: 0.5,
-        side: THREE.DoubleSide
-    });
-
-    const markerMesh = new THREE.Mesh(markerGeometry, markerMaterial);
-    markerMesh.position.y = 0.05;
-	markerRoot.add(markerMesh);
+	markerRoot.add(addModel(0));
+	markerRoot.add(addModel(1));
 
 	const hemiLight = new THREE.HemisphereLight(0xffffff, 0xffffff, 2);
 	hemiLight.color.setHSL(0.6, 1, 0.6);
@@ -129,35 +115,45 @@ function initialize() {
 
 	scene.add(dirLight);
 
-	setModel(0);
-
 	renderer.setAnimationLoop(animate);
 
 }
 
-function setModel(modelId) {
-	if (modelId === currentModelId) {
-		return
-	}
-	console.log(`Showing model #${modelId}`);
-	currentModelId = modelId;
-	if (currentModel) {
-		markerRoot.remove(currentModel);
-	}
+function addModel(modelId) {
+	const group = new THREE.Group();
+
+    const markerGeometry = new THREE.BoxGeometry(1, 0.1, 1);
+    const markerMaterial = new THREE.MeshNormalMaterial({
+        transparent: true,
+        opacity: 0.5,
+        side: THREE.DoubleSide
+    });
+
+    const markerMesh = new THREE.Mesh(markerGeometry, markerMaterial);
+    markerMesh.position.y = 0.05;
+	group.add(markerMesh);
+
 	loader.loadAsync(modelList[modelId]).then(
 		gltf => {
-			currentModel = gltf.scene;
-			currentModel.scale.multiplyScalar(0.02);
-			markerRoot.add(currentModel);
+			const mesh = gltf.scene;
+			mesh.scale.multiplyScalar(0.02);
+			group.add(mesh);
 
 			if (gltf.animations.length > 0) {
-				animationMixer = new THREE.AnimationMixer(gltf.scene);
+				const animationMixer = new THREE.AnimationMixer(gltf.scene);
 				for (const a of gltf.animations) {
 					animationMixer.clipAction(a).play();
 				}
+				animationMixers.push(animationMixer);
 			}
 		}
 	);
+	new ArMarkerControls(arToolkitContext, group, {
+        type: 'barcode',
+        barcodeValue: modelId,
+    });
+
+	return group;
 }
 
 
@@ -168,8 +164,8 @@ function render() {
 
 function animate() {
 	const delta = clock.getDelta();
-	if (animationMixer) {
-		animationMixer.update(delta);
+	for (const a of animationMixers) {
+		a.update(delta);
 	}
 	// update artoolkit on every frame
     if (arToolkitSource.ready !== false) {

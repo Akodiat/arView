@@ -3,19 +3,23 @@
 <head>
     <meta charset="UTF-8">
     <title>QR Code Styling</title>
-    <script type="text/javascript" src="./qr-code-styling.js"></script>
+    <script type="text/javascript" src="./lib/qr-code-styling.js"></script>
 </head>
 <body>
 <div id="canvas"></div>
-<script type="text/javascript">
+<script type="module">
+    import {BarcodeMarkerGenerator, MATRIX_4X4_BCH_1393} from "./lib/barcode-marker-generator.js"
+
+    const canvas = document.getElementById("canvas");
 
     function generateCode(i) {
+        const g = new BarcodeMarkerGenerator(MATRIX_4X4_BCH_1393, i);
         return new QRCodeStyling({
             width: 300,
             height: 300,
             type: "svg",
-            image: "../data/target.png",
-            data:`https://akodiat.github.io/arView/?i=${i}`,
+            image: g.asSVGDataURI(),
+            data:`https://akodiat.github.io/arView`,
             shape: "square",
             margin:10,
             qrOptions:{
@@ -26,20 +30,23 @@
             imageOptions:{
                     saveAsBlob:true,
                     hideBackgroundDots:false,
-                    imageSize:1,
-                    margin:6
+                    imageSize:0.68,
             },
             dotsOptions:{
                 type:"square",
-                color:"#000000",
+                color:"#777777",
                 roundSize:true
             },
         });
+        return qr;
     }
 
-    const qrCode = generateCode(1);
-    qrCode.append(document.getElementById("canvas"));
-    //qrCode.download({ name: "qr", extension: "svg" });
+    for (let i=0; i<9; i++) {
+        const qr = generateCode(i);
+        qr.append(canvas);
+        //qr.download({ name: `qr_${i}`, extension: "svg" });
+    }
+
 
 </script>
 </body>
