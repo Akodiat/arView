@@ -10,7 +10,10 @@ import {
 
 const modelList = [
     "../resources/flamingo.glb",
-    "../resources/horse.glb"
+    "../resources/horse.glb",
+    "../resources/duck.glb",
+    "../resources/parrot.glb",
+    "../resources/littlestTokyo.glb"
 ];
 
 var scene, camera, renderer;
@@ -124,7 +127,7 @@ function onResize() {
 function addModel(modelId) {
     const group = new THREE.Group();
 
-    const markerGeometry = new THREE.BoxGeometry(1, 0.1, 1);
+    const markerGeometry = new THREE.BoxGeometry(1, 0.09, 1);
     const markerMaterial = new THREE.MeshNormalMaterial({
         transparent: true,
         opacity: 0.5,
@@ -138,6 +141,7 @@ function addModel(modelId) {
     loader.loadAsync(modelList[modelId]).then(
         gltf => {
             const mesh = gltf.scene;
+            mesh.position.y = 0.1;
             group.add(mesh);
 
             if (gltf.animations.length > 0) {
