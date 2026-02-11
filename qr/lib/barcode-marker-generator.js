@@ -68,10 +68,10 @@ export class BarcodeMarkerGenerator {
         this.valueEncoded = this.typeDesc.encoder(value);
     }
 
-    asSVG() {
+    asSVG(size=100) {
         let svgStr =
             '<?xml version="1.0" encoding="utf-8"?>' +
-            '<svg version="1.1" xmlns="http://www.w3.org/2000/svg" width="100" height="100">' +
+            `<svg viewBox="0 0 100 100" version="1.1" xmlns="http://www.w3.org/2000/svg" width="${size}" height="${size}">` +
             '<rect x="0" y="0" width="100" height="100" style="fill:rgb(0, 0, 0);stroke-width:3;stroke:rgb(255, 255, 255)" />';
 
         const pixelSize = 50.0 / this.typeDesc.matrixSize;

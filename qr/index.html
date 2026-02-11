@@ -2,48 +2,55 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>QR Code Styling</title>
+    <title>QR</title>
+    <style>
+        #container {
+            display: grid;
+        }
+        .row {
+            margin: 50px
+        }
+    </style>
     <script type="text/javascript" src="./lib/qr-code-styling.js"></script>
 </head>
 <body>
-<div id="canvas"></div>
+<div id="container" style="display: grid;"></div>
 <script type="module">
     import {BarcodeMarkerGenerator, MATRIX_4X4_BCH_1393} from "./lib/barcode-marker-generator.js"
 
-    const canvas = document.getElementById("canvas");
+    const container = document.getElementById("container");
 
-    function generateCode(i) {
+    function generateCode(i, size=200) {
         const g = new BarcodeMarkerGenerator(MATRIX_4X4_BCH_1393, i);
-        return new QRCodeStyling({
-            width: 300,
-            height: 300,
+        const qr = new QRCodeStyling({
+            width: size,
+            height: size,
             type: "svg",
-            image: g.asSVGDataURI(),
+            //image: g.asSVGDataURI(),
             data:`https://akodiat.github.io/arView`,
             shape: "square",
-            margin:10,
+            margin:1,
             qrOptions:{
                 typeNumber:"0",
                 mode:"Byte",
-                errorCorrectionLevel:"H"
-            },
-            imageOptions:{
-                    saveAsBlob:true,
-                    hideBackgroundDots:false,
-                    imageSize:0.68,
+                errorCorrectionLevel:"L"
             },
             dotsOptions:{
-                type:"square",
-                color:"#777777",
+                type:"rounded",
+                color:"#000000",
                 roundSize:true
             },
         });
+        const s = document.createElement("div");
+        s.classList.add("row");
+        s.innerHTML = g.asSVG(size);
+        qr.append(s);
+        container.appendChild(s);
         return qr;
     }
 
     for (let i=0; i<9; i++) {
         const qr = generateCode(i);
-        qr.append(canvas);
         //qr.download({ name: `qr_${i}`, extension: "svg" });
     }
 
