@@ -1,0 +1,41 @@
+
+<html>
+  <head>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <script type="importmap">
+    {
+      "imports": {
+        "three": "https://unpkg.com/three@0.160.0/build/three.module.js",
+        "three/addons/": "https://unpkg.com/three@0.160.0/examples/jsm/"
+      }
+    }
+    </script>
+    <style>
+      body {
+        margin: 0;
+      }
+      #container {
+        width: 100vw;
+        height: 100vh;
+        position: relative;
+        overflow: hidden;
+      }
+      #control {
+        position: fixed;
+        top: 0;
+        left: 0;
+        z-index: 2;
+      }
+      #qrvid {
+        display: none;
+      }
+    </style>
+  </head>
+  <body>
+    <div id="container"></div>
+    <video id="qrvid"></video>
+  </body>
+
+  <script type="module" src="src/main.js"></script>
+</html>
+

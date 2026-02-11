@@ -1,41 +1,21 @@
-
-<html>
+<!doctype html>
+<html lang="en">
   <head>
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <script type="importmap">
-    {
-      "imports": {
-        "three": "https://unpkg.com/three@0.160.0/build/three.module.js",
-        "three/addons/": "https://unpkg.com/three@0.160.0/examples/jsm/"
-      }
-    }
-    </script>
-    <style>
-      body {
-        margin: 0;
-      }
-      #container {
-        width: 100vw;
-        height: 100vh;
-        position: relative;
-        overflow: hidden;
-      }
-      #control {
-        position: fixed;
-        top: 0;
-        left: 0;
-        z-index: 2;
-      }
-      #qrvid {
-        display: none;
-      }
-    </style>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, user-scalable=no, minimum-scale=1.0, maximum-scale=1.0">
+    <title>AR</title>
+
+	<script type="importmap">
+	{
+		"imports": {
+			"threex": "./lib/ar-threex.mjs",
+			"three": "https://unpkg.com/three@0.160.0/build/three.module.js",
+			"three/addons/": "https://unpkg.com/three@0.160.0/examples/jsm/"
+		}
+  }
+	</script>
   </head>
   <body>
-    <div id="container"></div>
-    <video id="qrvid"></video>
+	<script type="module" src="./src/main.js"></script>
   </body>
-
-  <script type="module" src="src/main.js"></script>
 </html>
-
