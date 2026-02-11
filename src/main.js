@@ -138,7 +138,6 @@ function addModel(modelId) {
     loader.loadAsync(modelList[modelId]).then(
         gltf => {
             const mesh = gltf.scene;
-            mesh.scale.multiplyScalar(0.01);
             group.add(mesh);
 
             if (gltf.animations.length > 0) {
