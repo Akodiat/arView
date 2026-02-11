@@ -9,11 +9,11 @@ import {
 
 
 const modelList = [
-    "../resources/flamingo.glb",
-    "../resources/horse.glb",
-    "../resources/duck.glb",
-    "../resources/parrot.glb",
-    "../resources/littlestTokyo.glb"
+    "resources/flamingo.glb",
+    "resources/horse.glb",
+    "resources/duck.glb",
+    "resources/parrot.glb",
+    "resources/littlestTokyo.glb"
 ];
 
 var scene, camera, renderer;
@@ -76,7 +76,7 @@ function initialize() {
 
     // create atToolkitContext
     arToolkitContext = new ArToolkitContext({
-        cameraParametersUrl: "../resources/camera_para.dat",
+        cameraParametersUrl: "resources/camera_para.dat",
         detectionMode: "mono_and_matrix",
         matrixCodeType: "4x4_BCH_13_9_3",
     });
