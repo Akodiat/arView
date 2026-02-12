@@ -107,7 +107,9 @@ function initialize() {
         camera.projectionMatrix.copy(arToolkitContext.getProjectionMatrix());
     });
 
-    arToolkitSource.init(() => {});
+    arToolkitSource.init(() => {
+        loadingScreen.open = false;
+    });
 
     ////////////////////////////////////////////////////////////
     // setup markerRoots
