@@ -188,19 +188,12 @@ function render() {
     renderer.render(scene, camera);
 }
 
-
-let initialResize = false;
 function animate() {
     const delta = clock.getDelta();
     for (const a of animationMixers) {
         a.update(delta);
     }
-    if (!initialResize) {
-        // Ugly, but only way I found to trigger resize after
-        // everything is set up.
-        onResize();
-        initialResize = true;
-    }
+
     // update artoolkit on every frame
     if (arToolkitSource.ready !== false) {
         arToolkitContext.update(arToolkitSource.domElement);
