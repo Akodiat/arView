@@ -16,6 +16,13 @@ const modelList = [
     "resources/littlestTokyo.glb"
 ];
 
+const exitFullscreenButton = document.getElementById("exitFullscreenButton");
+exitFullscreenButton.addEventListener("click", e=>{
+    document.exitFullscreen();
+    exitFullscreenButton.hidden = true;
+    e.stopPropagation();
+});
+
 var scene, camera, renderer;
 
 var arToolkitSource, arToolkitContext;
@@ -67,8 +74,15 @@ function initialize() {
     window.addEventListener("resize", onResize);
 
     // Ugly hacks to make sure we have correct canvas size
-    window.addEventListener("markerFound", onResize);
-    window.addEventListener("click", onResize);
+    window.addEventListener("markerFound", ()=>{
+        onResize();
+    });
+    window.addEventListener("click", ()=>{
+        document.body.requestFullscreen().then(
+            () => exitFullscreenButton.hidden = false
+        );
+        onResize();
+    });
 
     ////////////////////////////////////////////////////////////
     // setup arToolkitContext
@@ -113,7 +127,6 @@ function initialize() {
     scene.add(dirLight);
 
     renderer.setAnimationLoop(animate);
-
 }
 
 function onResize() {
