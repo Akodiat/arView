@@ -16,11 +16,18 @@ const modelList = [
     "resources/littlestTokyo.glb"
 ];
 
+const loadingScreen = document.getElementById("loadingScreen");
+
 const exitFullscreenButton = document.getElementById("exitFullscreenButton");
 exitFullscreenButton.addEventListener("click", e=>{
     document.exitFullscreen();
-    exitFullscreenButton.hidden = true;
     e.stopPropagation();
+});
+
+// Shows fullscreen exit button if fullscreen is enabled,
+// hides it otherwise.
+document.addEventListener("fullscreenchange", () => {
+    exitFullscreenButton.hidden = !document.fullscreenElement;
 });
 
 var scene, camera, renderer;
@@ -77,10 +84,10 @@ function initialize() {
     window.addEventListener("markerFound", ()=>{
         onResize();
     });
-    window.addEventListener("click", ()=>{
-        document.body.requestFullscreen().then(
-            () => exitFullscreenButton.hidden = false
-        );
+    window.addEventListener("click", () => {
+        if (!document.fullscreenElement) {
+            document.body.requestFullscreen();
+        }
         onResize();
     });
 
